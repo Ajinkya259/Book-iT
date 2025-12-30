@@ -100,22 +100,98 @@ Vendor:
 
 ---
 
-## Phase 3: Booking System (PLANNED)
+## Phase 3: Booking System ✅ COMPLETED
 
-- Real-time availability checking
-- Booking creation and management
-- Booking status workflow (pending → confirmed → completed)
-- Cancellation handling
-- Customer booking history
+### Features Implemented
+1. **Time Slots API**
+   - `GET /api/vendors/[vendorId]/slots?date=YYYY-MM-DD&serviceId=xxx`
+   - Generates available time slots based on vendor availability
+   - Respects existing bookings, buffer time, service duration
+   - Handles exceptions (holidays, special hours)
+   - Filters past slots if date is today
+
+2. **Booking CRUD API**
+   - `GET /api/bookings` - List bookings (vendor/customer views)
+   - `POST /api/bookings` - Create new booking with conflict checking
+   - `GET /api/bookings/[id]` - Get specific booking
+   - `PUT /api/bookings/[id]` - Update booking status
+
+3. **Booking Status Workflow**
+   - PENDING → CONFIRMED or CANCELLED
+   - CONFIRMED → COMPLETED, CANCELLED, or NO_SHOW
+   - Only vendors can mark COMPLETED or NO_SHOW
+   - Cancellation tracking with reason and timestamp
+
+4. **Vendor Booking Management UI** (`/dashboard/vendor/bookings`)
+   - Filter by status: upcoming, confirmed, pending, completed, cancelled, all
+   - Actions: Complete, No Show, Cancel (for confirmed)
+   - Actions: Confirm, Decline (for pending)
+   - Customer details, service info, notes display
+
+5. **Customer Booking UI**
+   - Vendor public profile page (`/v/[slug]`)
+   - Service selection with pricing
+   - Date picker with available time slots
+   - Booking confirmation with optional notes
+   - Customer bookings page (`/dashboard/bookings`)
+   - Cancel booking functionality
+
+6. **Customer Dashboard Updates**
+   - Real-time upcoming/past bookings display
+   - Quick actions to view bookings, search services
+   - Status-based booking counts
+
+### New Routes
+- `GET /api/vendors/[vendorId]` - Get vendor public profile
+- `GET /api/vendors/[vendorId]/slots` - Get available time slots
+- `GET/POST /api/bookings` - List/Create bookings
+- `GET/PUT /api/bookings/[id]` - Get/Update individual booking
+- `/v/[slug]` - Vendor public profile page
+- `/dashboard/bookings` - Customer bookings page
+- `/dashboard/vendor/bookings` - Vendor bookings management
 
 ---
 
-## Phase 4: Discovery & Search (PLANNED)
+## Phase 4: Discovery & Search ✅ COMPLETED
 
-- Location-based vendor search
-- Category filtering
-- Map view with vendor markers
-- Vendor public profiles (`/v/[slug]`)
+### Features Implemented
+1. **Vendors Search API** (`/api/vendors`)
+   - Text search on business name and description
+   - Filter by city/state
+   - Filter by category
+   - Location-based search with radius (Haversine formula)
+   - Pagination support
+   - Distance calculation from user location
+
+2. **Categories API** (`/api/categories`)
+   - List all categories with vendor counts
+   - Used for filtering in search
+
+3. **Search Page** (`/search`)
+   - Full-text search input
+   - City filter
+   - Category filter sidebar
+   - "Use my location" for proximity search
+   - List view with vendor cards
+   - Map view with Google Maps integration
+   - Pagination
+   - Responsive design
+
+4. **Map Integration**
+   - Interactive Google Maps with vendor markers
+   - Click markers to see vendor info
+   - Link to vendor profile from info window
+   - Auto-fit bounds to show all vendors
+
+5. **Categories Seeded**
+   - Hair Salon, Barber Shop, Spa & Wellness
+   - Nail Salon, Fitness, Medical, Dental
+   - Auto Services, Pet Services, Photography
+
+### New Routes
+- `GET /api/vendors` - Search vendors with filters
+- `GET /api/categories` - List all categories
+- `/search` - Search and discovery page
 
 ---
 
@@ -159,4 +235,4 @@ NEXT_PUBLIC_APP_URL
 
 ---
 
-*Last Updated: December 30, 2025*
+*Last Updated: December 30, 2025 (Phase 4 Complete)*
