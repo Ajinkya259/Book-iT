@@ -29,15 +29,16 @@ export function formatTime(time: string): string {
 }
 
 /**
- * Generate URL-friendly slug
+ * Generate URL-friendly slug (max 50 characters)
  */
-export function slugify(text: string): string {
+export function slugify(text: string, maxLength: number = 50): string {
   return text
     .toLowerCase()
     .trim()
     .replace(/[^\w\s-]/g, '')
     .replace(/[\s_-]+/g, '-')
-    .replace(/^-+|-+$/g, '');
+    .replace(/^-+|-+$/g, '')
+    .substring(0, maxLength);
 }
 
 /**
