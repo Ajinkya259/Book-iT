@@ -110,7 +110,6 @@ export default function Home() {
         {/* Footer */}
         <footer className="mt-24 text-center text-gray-500 dark:text-gray-400 text-sm">
           <p>Book-iT - The Google Maps of Appointments</p>
-          <p className="mt-2">Built with Next.js, Supabase, and Prisma</p>
         </footer>
       </main>
     </div>

@@ -1,11 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { GoogleMapsProvider, AddressAutocomplete, type AddressComponents } from '@/components/maps';
 
-export default function VendorRegisterPage() {
+function VendorRegisterForm() {
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
     // Account
@@ -21,6 +22,8 @@ export default function VendorRegisterPage() {
     city: '',
     state: '',
     postalCode: '',
+    latitude: 0,
+    longitude: 0,
   });
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -30,7 +33,28 @@ export default function VendorRegisterPage() {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
+  const handleAddressSelect = useCallback((addressComponents: AddressComponents) => {
+    setFormData((prev) => ({
+      ...prev,
+      address: addressComponents.address,
+      city: addressComponents.city,
+      state: addressComponents.state,
+      postalCode: addressComponents.postalCode,
+      latitude: addressComponents.latitude,
+      longitude: addressComponents.longitude,
+    }));
+  }, []);
+
   const validateStep1 = () => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!formData.email.trim()) {
+      setError('Email is required');
+      return false;
+    }
+    if (!emailRegex.test(formData.email)) {
+      setError('Please enter a valid email address');
+      return false;
+    }
     if (formData.password !== formData.confirmPassword) {
       setError('Passwords do not match');
       return false;
@@ -110,6 +134,8 @@ export default function VendorRegisterPage() {
         city: formData.city,
         state: formData.state,
         postalCode: formData.postalCode,
+        latitude: formData.latitude || null,
+        longitude: formData.longitude || null,
       }),
     });
 
@@ -120,9 +146,17 @@ export default function VendorRegisterPage() {
       return;
     }
 
+    // Ensure user is signed in after registration
+    await supabase.auth.signInWithPassword({
+      email: formData.email,
+      password: formData.password,
+    });
+
     router.push('/dashboard/vendor');
     router.refresh();
   };
+
+  const inputClassName = "mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-green-500 focus:border-green-500 dark:bg-gray-800 dark:text-white";
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8">
@@ -182,7 +216,7 @@ export default function VendorRegisterPage() {
                   required
                   value={formData.email}
                   onChange={handleChange}
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-green-500 focus:border-green-500 dark:bg-gray-800 dark:text-white"
+                  className={inputClassName}
                   placeholder="business@example.com"
                 />
               </div>
@@ -198,7 +232,7 @@ export default function VendorRegisterPage() {
                   required
                   value={formData.password}
                   onChange={handleChange}
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-green-500 focus:border-green-500 dark:bg-gray-800 dark:text-white"
+                  className={inputClassName}
                   placeholder="••••••••"
                 />
               </div>
@@ -214,7 +248,7 @@ export default function VendorRegisterPage() {
                   required
                   value={formData.confirmPassword}
                   onChange={handleChange}
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-green-500 focus:border-green-500 dark:bg-gray-800 dark:text-white"
+                  className={inputClassName}
                   placeholder="••••••••"
                 />
               </div>
@@ -235,7 +269,7 @@ export default function VendorRegisterPage() {
                   required
                   value={formData.businessName}
                   onChange={handleChange}
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-green-500 focus:border-green-500 dark:bg-gray-800 dark:text-white"
+                  className={inputClassName}
                   placeholder="Acme Barber Shop"
                 />
               </div>
@@ -250,7 +284,7 @@ export default function VendorRegisterPage() {
                   rows={3}
                   value={formData.description}
                   onChange={handleChange}
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-green-500 focus:border-green-500 dark:bg-gray-800 dark:text-white"
+                  className={inputClassName}
                   placeholder="Tell customers about your business..."
                 />
               </div>
@@ -265,7 +299,7 @@ export default function VendorRegisterPage() {
                   type="tel"
                   value={formData.phone}
                   onChange={handleChange}
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-green-500 focus:border-green-500 dark:bg-gray-800 dark:text-white"
+                  className={inputClassName}
                   placeholder="+1 (555) 123-4567"
                 />
               </div>
@@ -276,20 +310,32 @@ export default function VendorRegisterPage() {
           {step === 3 && (
             <div className="space-y-4">
               <div>
-                <label htmlFor="address" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Street address
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Business address
                 </label>
-                <input
-                  id="address"
-                  name="address"
-                  type="text"
-                  required
-                  value={formData.address}
-                  onChange={handleChange}
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-green-500 focus:border-green-500 dark:bg-gray-800 dark:text-white"
-                  placeholder="123 Main St"
+                <AddressAutocomplete
+                  onAddressSelect={handleAddressSelect}
+                  placeholder="Start typing your address..."
+                  className={inputClassName}
                 />
+                <p className="mt-1 text-xs text-gray-500">
+                  Start typing and select from suggestions
+                </p>
               </div>
+
+              {formData.address && (
+                <div className="p-3 bg-green-50 dark:bg-green-900/30 rounded-lg border border-green-200 dark:border-green-800">
+                  <p className="text-sm text-green-800 dark:text-green-300 font-medium">Selected address:</p>
+                  <p className="text-sm text-green-700 dark:text-green-400">
+                    {formData.address}, {formData.city}, {formData.state} {formData.postalCode}
+                  </p>
+                  {formData.latitude !== 0 && (
+                    <p className="text-xs text-green-600 dark:text-green-500 mt-1">
+                      Coordinates: {formData.latitude.toFixed(6)}, {formData.longitude.toFixed(6)}
+                    </p>
+                  )}
+                </div>
+              )}
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -303,7 +349,7 @@ export default function VendorRegisterPage() {
                     required
                     value={formData.city}
                     onChange={handleChange}
-                    className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-green-500 focus:border-green-500 dark:bg-gray-800 dark:text-white"
+                    className={inputClassName}
                     placeholder="San Francisco"
                   />
                 </div>
@@ -319,7 +365,7 @@ export default function VendorRegisterPage() {
                     required
                     value={formData.state}
                     onChange={handleChange}
-                    className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-green-500 focus:border-green-500 dark:bg-gray-800 dark:text-white"
+                    className={inputClassName}
                     placeholder="CA"
                   />
                 </div>
@@ -336,7 +382,7 @@ export default function VendorRegisterPage() {
                   required
                   value={formData.postalCode}
                   onChange={handleChange}
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-green-500 focus:border-green-500 dark:bg-gray-800 dark:text-white"
+                  className={inputClassName}
                   placeholder="94102"
                 />
               </div>
@@ -366,9 +412,17 @@ export default function VendorRegisterPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="flex-1 py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
-                {loading ? 'Creating business...' : 'Create business'}
+                {loading ? (
+                  <>
+                    <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Creating business...
+                  </>
+                ) : 'Create business'}
               </button>
             )}
           </div>
@@ -382,5 +436,13 @@ export default function VendorRegisterPage() {
         </form>
       </div>
     </div>
+  );
+}
+
+export default function VendorRegisterPage() {
+  return (
+    <GoogleMapsProvider>
+      <VendorRegisterForm />
+    </GoogleMapsProvider>
   );
 }

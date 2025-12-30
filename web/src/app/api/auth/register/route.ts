@@ -20,7 +20,7 @@ export async function POST(request: Request) {
 
   try {
     const body = await request.json();
-    const { userId, email, role, name, phone, businessName, description, address, city, state, postalCode } = body;
+    const { userId, email, role, name, phone, businessName, description, address, city, state, postalCode, latitude, longitude } = body;
 
     if (!userId || !email || !role) {
       return NextResponse.json(
@@ -29,14 +29,25 @@ export async function POST(request: Request) {
       );
     }
 
-    // Check if user already exists
-    const existingUser = await prisma.user.findUnique({
+    // Check if user already exists by ID
+    const existingUserById = await prisma.user.findUnique({
       where: { id: userId },
+      include: { customer: true, vendor: true },
     });
 
-    if (existingUser) {
+    if (existingUserById) {
+      // User already fully registered, return success
+      return NextResponse.json({ user: existingUserById }, { status: 200 });
+    }
+
+    // Check if email already exists (from a previous failed attempt with different auth ID)
+    const existingUserByEmail = await prisma.user.findUnique({
+      where: { email },
+    });
+
+    if (existingUserByEmail) {
       return NextResponse.json(
-        { error: 'User already exists' },
+        { error: 'An account with this email already exists. Please sign in instead.' },
         { status: 409 }
       );
     }
@@ -106,6 +117,8 @@ export async function POST(request: Request) {
               city,
               state,
               postalCode,
+              latitude: latitude || null,
+              longitude: longitude || null,
             },
           },
         },
@@ -123,8 +136,9 @@ export async function POST(request: Request) {
     );
   } catch (error) {
     console.error('Registration error:', error);
+    const message = error instanceof Error ? error.message : 'Internal server error';
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: message },
       { status: 500 }
     );
   } finally {
