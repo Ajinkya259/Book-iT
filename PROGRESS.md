@@ -71,24 +71,32 @@ Vendor:
 
 ---
 
-## Phase 2: Vendor Services & Availability 🔄 IN PROGRESS
+## Phase 2: Vendor Services & Availability ✅ COMPLETED
 
-### Planned Features
+### Features Implemented
 1. **Service Management**
-   - CRUD API for services
-   - Service categories and pricing
-   - Duration and buffer time settings
+   - CRUD API (`/api/vendor/services`)
+   - Service name, description, duration, price
    - Active/inactive toggle
+   - Soft delete support
+   - UI: `/dashboard/vendor/services`
 
 2. **Availability Management**
-   - Weekly schedule setup
-   - Time slot configuration
-   - Break times
+   - Weekly schedule API (`/api/vendor/availability`)
+   - Day-by-day time slot configuration
+   - Quick apply presets (9-5, 8-6, etc.)
+   - UI: `/dashboard/vendor/availability`
 
 3. **Exceptions**
-   - Holiday closures
-   - Special hours
-   - Vacation mode
+   - Holiday/special hours API (`/api/vendor/exceptions`)
+   - Closed days with reason
+   - Modified hours for special days
+
+### New Routes
+- `GET/POST /api/vendor/services` - List/Create services
+- `GET/PUT/DELETE /api/vendor/services/[id]` - Individual service operations
+- `GET/POST/PUT /api/vendor/availability` - Manage weekly schedule
+- `GET/POST/DELETE /api/vendor/exceptions` - Manage exceptions
 
 ---
 
