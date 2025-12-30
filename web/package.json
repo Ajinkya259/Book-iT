@@ -10,12 +10,14 @@
     "postinstall": "prisma generate"
   },
   "dependencies": {
+    "@prisma/adapter-pg": "^7.2.0",
     "@prisma/client": "^7.2.0",
     "@supabase/ssr": "^0.8.0",
     "@supabase/supabase-js": "^2.89.0",
     "clsx": "^2.1.1",
     "dotenv": "^17.2.3",
     "next": "16.1.1",
+    "pg": "^8.16.3",
     "prisma": "^7.2.0",
     "react": "19.2.3",
     "react-dom": "19.2.3",
