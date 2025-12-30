@@ -1,0 +1,334 @@
+// Book-iT Prisma Schema
+// Database: PostgreSQL (Supabase)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ============================================
+// ENUMS
+// ============================================
+
+enum UserRole {
+  VENDOR
+  CUSTOMER
+  ADMIN
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+  NO_SHOW
+}
+
+// ============================================
+// USER & AUTH
+// ============================================
+
+model User {
+  id        String    @id @default(uuid())
+  email     String    @unique
+  role      UserRole
+
+  deletedAt DateTime?
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  vendor    Vendor?
+  customer  Customer?
+
+  @@map("users")
+}
+
+// ============================================
+// VENDOR
+// ============================================
+
+model Vendor {
+  id     String @id @default(uuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Basic Info
+  businessName String
+  slug         String  @unique
+  description  String?
+  phone        String?
+  email        String
+
+  // Location
+  address    String
+  city       String
+  state      String
+  postalCode String
+  country    String @default("USA")
+
+  // Coordinates (PostGIS geography column added via SQL)
+  latitude  Float?
+  longitude Float?
+
+  // Settings
+  timezone         String @default("UTC")
+  currency         String @default("USD")
+  bufferMinutes    Int    @default(0)
+  minLeadTimeHours Int    @default(2)
+  maxAdvanceDays   Int    @default(30)
+
+  // Media
+  logoUrl       String?
+  coverImageUrl String?
+
+  // Computed (updated via trigger)
+  averageRating Float? @default(0)
+  totalReviews  Int    @default(0)
+
+  // Status
+  isActive  Boolean   @default(true)
+  deletedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  services     Service[]
+  availability Availability[]
+  exceptions   VendorException[]
+  bookings     Booking[]
+  reviews      Review[]
+  images       VendorImage[]
+  categories   CategoriesOnVendors[]
+
+  @@index([city, isActive])
+  @@index([slug])
+  @@map("vendors")
+}
+
+// ============================================
+// SERVICE
+// ============================================
+
+model Service {
+  id       String @id @default(uuid())
+  vendorId String
+  vendor   Vendor @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+
+  name        String
+  description String?
+  duration    Int
+  price       Decimal @db.Decimal(10, 2)
+  currency    String  @default("USD")
+
+  isActive  Boolean   @default(true)
+  deletedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  bookings Booking[]
+
+  @@index([vendorId, isActive])
+  @@map("services")
+}
+
+// ============================================
+// AVAILABILITY
+// ============================================
+
+model Availability {
+  id       String @id @default(uuid())
+  vendorId String
+  vendor   Vendor @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+
+  dayOfWeek Int
+  startTime String
+  endTime   String
+  isActive  Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([vendorId, dayOfWeek])
+  @@map("availability")
+}
+
+// ============================================
+// VENDOR EXCEPTIONS
+// ============================================
+
+model VendorException {
+  id       String @id @default(uuid())
+  vendorId String
+  vendor   Vendor @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+
+  date      DateTime @db.Date
+  isClosed  Boolean  @default(true)
+  startTime String?
+  endTime   String?
+  reason    String?
+
+  createdAt DateTime @default(now())
+
+  @@unique([vendorId, date])
+  @@index([vendorId, date])
+  @@map("vendor_exceptions")
+}
+
+// ============================================
+// CUSTOMER
+// ============================================
+
+model Customer {
+  id     String @id @default(uuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  name  String
+  phone String?
+
+  deletedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  bookings Booking[]
+  reviews  Review[]
+
+  @@map("customers")
+}
+
+// ============================================
+// BOOKING
+// ============================================
+
+model Booking {
+  id String @id @default(uuid())
+
+  vendorId   String
+  vendor     Vendor   @relation(fields: [vendorId], references: [id])
+  serviceId  String
+  service    Service  @relation(fields: [serviceId], references: [id])
+  customerId String
+  customer   Customer @relation(fields: [customerId], references: [id])
+
+  // Time
+  date      DateTime @db.Date
+  startTime String
+  endTime   String
+
+  // UTC timestamps
+  startTimeUtc DateTime?
+  endTimeUtc   DateTime?
+
+  // Status
+  status BookingStatus @default(CONFIRMED)
+
+  // Customer info (denormalized)
+  customerName  String
+  customerEmail String
+  customerPhone String?
+
+  // Notes
+  customerNotes String?
+  vendorNotes   String?
+
+  // Cancellation
+  cancelledAt        DateTime?
+  cancelledBy        String?
+  cancellationReason String?
+
+  // Reminders
+  reminderSentAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  review Review?
+
+  @@index([vendorId, date])
+  @@index([customerId])
+  @@index([status])
+  @@map("bookings")
+}
+
+// ============================================
+// REVIEW
+// ============================================
+
+model Review {
+  id String @id @default(uuid())
+
+  bookingId String  @unique
+  booking   Booking @relation(fields: [bookingId], references: [id])
+
+  vendorId   String
+  vendor     Vendor   @relation(fields: [vendorId], references: [id])
+  customerId String
+  customer   Customer @relation(fields: [customerId], references: [id])
+
+  rating  Int
+  comment String?
+
+  vendorResponse String?
+  respondedAt    DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([vendorId])
+  @@map("reviews")
+}
+
+// ============================================
+// VENDOR IMAGES
+// ============================================
+
+model VendorImage {
+  id       String @id @default(uuid())
+  vendorId String
+  vendor   Vendor @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+
+  url     String
+  caption String?
+  order   Int    @default(0)
+
+  createdAt DateTime @default(now())
+
+  @@index([vendorId])
+  @@map("vendor_images")
+}
+
+// ============================================
+// CATEGORIES
+// ============================================
+
+model Category {
+  id   String  @id @default(uuid())
+  name String  @unique
+  slug String  @unique
+  icon String?
+
+  createdAt DateTime @default(now())
+
+  vendors CategoriesOnVendors[]
+
+  @@map("categories")
+}
+
+model CategoriesOnVendors {
+  vendorId   String
+  vendor     Vendor   @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  categoryId String
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  assignedAt DateTime @default(now())
+
+  @@id([vendorId, categoryId])
+  @@map("categories_on_vendors")
+}
