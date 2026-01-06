@@ -56,6 +56,8 @@ export async function GET(request: Request, { params }: RouteParams) {
         state: vendor.state,
         phone: vendor.phone,
         email: vendor.email,
+        averageRating: vendor.averageRating,
+        totalReviews: vendor.totalReviews,
         services: vendor.services,
       },
     });

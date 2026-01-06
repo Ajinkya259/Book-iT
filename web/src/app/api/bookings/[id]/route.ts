@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
+import { sendBookingCancellation, sendReviewPrompt } from '@/lib/email';
 
 function createPrisma() {
   const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
@@ -149,10 +150,46 @@ export async function PUT(request: Request, { params }: RouteParams) {
       where: { id },
       data: updateData,
       include: {
-        vendor: { select: { businessName: true } },
+        vendor: { select: { businessName: true, address: true, city: true, phone: true, slug: true } },
         service: { select: { name: true, duration: true, price: true } },
       },
     });
+
+    // Format time for email
+    const formatTime = (time: string) => {
+      const [hours, mins] = time.split(':').map(Number);
+      const ampm = hours >= 12 ? 'PM' : 'AM';
+      const h = hours % 12 || 12;
+      return `${h}:${mins.toString().padStart(2, '0')} ${ampm}`;
+    };
+
+    // Send cancellation email (non-blocking)
+    if (status === 'CANCELLED') {
+      sendBookingCancellation({
+        customerName: booking.customerName,
+        customerEmail: booking.customerEmail,
+        vendorName: updatedBooking.vendor.businessName,
+        serviceName: updatedBooking.service.name,
+        date: booking.date.toISOString(),
+        time: formatTime(booking.startTime),
+        price: updatedBooking.service.price.toString(),
+        vendorAddress: updatedBooking.vendor.address,
+        vendorCity: updatedBooking.vendor.city,
+        cancelledBy: isVendor ? 'vendor' : 'customer',
+        reason: cancellationReason,
+      }).catch(console.error);
+    }
+
+    // Send review prompt email when booking is completed (non-blocking)
+    if (status === 'COMPLETED') {
+      sendReviewPrompt({
+        customerName: booking.customerName,
+        customerEmail: booking.customerEmail,
+        vendorName: updatedBooking.vendor.businessName,
+        serviceName: updatedBooking.service.name,
+        vendorSlug: updatedBooking.vendor.slug,
+      }).catch(console.error);
+    }
 
     return NextResponse.json({ booking: updatedBooking });
   } catch (error) {

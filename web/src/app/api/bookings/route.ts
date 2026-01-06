@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
+import { sendBookingConfirmation, sendVendorNewBookingNotification } from '@/lib/email';
 
 function createPrisma() {
   const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
@@ -59,8 +60,9 @@ export async function GET(request: Request) {
           ...(status && { status: status as any }),
         },
         include: {
-          vendor: { select: { businessName: true, address: true, city: true, phone: true } },
+          vendor: { select: { businessName: true, address: true, city: true, phone: true, slug: true } },
           service: { select: { name: true, duration: true, price: true } },
+          review: { select: { id: true, rating: true } },
         },
         orderBy: [{ date: 'desc' }, { startTime: 'desc' }],
       });
@@ -187,10 +189,42 @@ export async function POST(request: Request) {
         customerNotes: customerNotes || null,
       },
       include: {
-        vendor: { select: { businessName: true, address: true, city: true } },
+        vendor: { select: { businessName: true, address: true, city: true, phone: true, email: true } },
         service: { select: { name: true, duration: true, price: true } },
       },
     });
+
+    // Format time for email
+    const formatTime = (time: string) => {
+      const [hours, mins] = time.split(':').map(Number);
+      const ampm = hours >= 12 ? 'PM' : 'AM';
+      const h = hours % 12 || 12;
+      return `${h}:${mins.toString().padStart(2, '0')} ${ampm}`;
+    };
+
+    // Send confirmation emails (non-blocking)
+    Promise.all([
+      sendBookingConfirmation({
+        customerName: customer.name,
+        customerEmail: user.email!,
+        vendorName: booking.vendor.businessName,
+        serviceName: booking.service.name,
+        date: date,
+        time: formatTime(startTime),
+        price: booking.service.price.toString(),
+        vendorAddress: booking.vendor.address,
+        vendorCity: booking.vendor.city,
+        vendorPhone: booking.vendor.phone || undefined,
+      }),
+      booking.vendor.email && sendVendorNewBookingNotification({
+        vendorEmail: booking.vendor.email,
+        vendorName: booking.vendor.businessName,
+        customerName: customer.name,
+        serviceName: booking.service.name,
+        date: date,
+        time: formatTime(startTime),
+      }),
+    ]).catch(console.error);
 
     return NextResponse.json({ booking }, { status: 201 });
   } catch (error) {

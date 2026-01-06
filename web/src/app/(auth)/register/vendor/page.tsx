@@ -146,11 +146,23 @@ function VendorRegisterForm() {
       return;
     }
 
-    // Ensure user is signed in after registration
-    await supabase.auth.signInWithPassword({
+    // Auto-login after registration
+    const { error: signInError } = await supabase.auth.signInWithPassword({
       email: formData.email,
       password: formData.password,
     });
+
+    if (signInError) {
+      // If email confirmation is required, show message
+      if (signInError.message.includes('Email not confirmed')) {
+        setError('Please check your email to confirm your account, then sign in.');
+        setLoading(false);
+        return;
+      }
+      // Otherwise redirect to login
+      router.push('/login?registered=true');
+      return;
+    }
 
     router.push('/dashboard/vendor');
     router.refresh();
