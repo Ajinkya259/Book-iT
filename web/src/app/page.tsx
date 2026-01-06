@@ -13,7 +13,7 @@ const fadeInUp = {
   visible: {
     opacity: 1,
     y: 0,
-    transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] }
+    transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] as const }
   },
 };
 
@@ -41,7 +41,7 @@ const scaleIn = {
   visible: {
     opacity: 1,
     scale: 1,
-    transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] }
+    transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] as const }
   },
 };
 
@@ -57,7 +57,7 @@ function Counter({ value, suffix = '' }: { value: number; suffix?: string }) {
 
   useEffect(() => {
     if (isInView) {
-      const controls = animate(count, value, { duration: 2, ease: [0.22, 1, 0.36, 1] });
+      const controls = animate(count, value, { duration: 2, ease: [0.22, 1, 0.36, 1] as const });
       const unsubscribe = rounded.on('change', (latest) => setDisplayValue(String(latest)));
       return () => { controls.stop(); unsubscribe(); };
     }
