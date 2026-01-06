@@ -3,8 +3,45 @@
 ## Project Overview
 **Book-iT** - A universal appointment booking marketplace (The Google Maps of Appointments)
 
-**Live URL:** https://web-seven-amber-46.vercel.app
+**Live URL:** https://web-nine-orpin-58.vercel.app
 **GitHub:** https://github.com/Ajinkya259/Book-iT
+
+---
+
+## Phase 7: UI Redesign (Light Theme) ✅ COMPLETED
+
+### Changes Made (January 6, 2026)
+
+1. **Complete Theme Overhaul**
+   - Switched from dark theme (black background) to clean light theme (white/gray)
+   - New primary accent color: Blue (#2563EB) instead of Emerald
+   - Professional, clean aesthetic
+
+2. **Landing Page Redesign** (`/src/app/page.tsx`)
+   - Hero section with search bar and trust indicators
+   - Browse by Category (8 categories with emoji icons)
+   - How it Works (3-step process)
+   - Why Choose Book-iT (4 feature cards)
+   - Stats section with animated counters
+   - CTA section
+   - For Businesses promotion section with preview card
+
+3. **Framer Motion Animations**
+   - Staggered fade-in-up animations on page load
+   - Scroll-triggered animations for each section
+   - Hover effects on cards (lift + shadow)
+   - Animated counter for stats
+   - Spring physics on interactive elements
+
+4. **Updated Components**
+   - `Navbar.tsx` - Light theme with blue accents
+   - `Footer.tsx` - Clean gray background
+   - `globals.css` - New CSS variables for light theme
+
+### Deployment
+- **Live URL:** https://web-nine-orpin-58.vercel.app
+- **Build:** Successful (Next.js 16.1.1, 31 routes)
+- **Last deployed:** January 6, 2026
 
 ---
 
