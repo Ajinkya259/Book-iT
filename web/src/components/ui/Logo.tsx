@@ -5,7 +5,6 @@ import Link from 'next/link';
 
 interface LogoProps {
   size?: 'sm' | 'md' | 'lg';
-  variant?: 'light' | 'dark' | 'auto';
   showText?: boolean;
   href?: string;
 }
@@ -16,14 +15,8 @@ const sizes = {
   lg: { icon: 56, text: 'text-3xl' },
 };
 
-export function Logo({ size = 'md', variant = 'auto', showText = true, href = '/' }: LogoProps) {
+export function Logo({ size = 'md', showText = true, href = '/' }: LogoProps) {
   const { icon, text } = sizes[size];
-
-  const textColorClass = variant === 'light'
-    ? 'text-white'
-    : variant === 'dark'
-    ? 'text-gray-900'
-    : 'text-gray-900 dark:text-white';
 
   const content = (
     <motion.div
@@ -34,13 +27,17 @@ export function Logo({ size = 'md', variant = 'auto', showText = true, href = '/
       {/* Logo Icon */}
       <motion.div
         className="relative"
-        whileHover={{ rotate: [0, -5, 5, 0] }}
-        transition={{ duration: 0.5 }}
+        whileHover={{ rotate: [0, -3, 3, 0] }}
+        transition={{ duration: 0.4 }}
       >
         {/* Glow effect */}
         <div
-          className="absolute inset-0 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-xl blur-lg opacity-50"
-          style={{ width: icon, height: icon }}
+          className="absolute inset-0 rounded-xl blur-lg opacity-40"
+          style={{
+            width: icon,
+            height: icon,
+            background: 'linear-gradient(135deg, #10B981 0%, #34D399 100%)',
+          }}
         />
 
         {/* Main icon container */}
@@ -54,14 +51,14 @@ export function Logo({ size = 'md', variant = 'auto', showText = true, href = '/
         >
           {/* Gradient definitions */}
           <defs>
-            <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#9333ea" />
-              <stop offset="50%" stopColor="#7c3aed" />
-              <stop offset="100%" stopColor="#4f46e5" />
+            <linearGradient id="logoGradientEmerald" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#059669" />
+              <stop offset="50%" stopColor="#10B981" />
+              <stop offset="100%" stopColor="#34D399" />
             </linearGradient>
-            <linearGradient id="calendarGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#a855f7" />
-              <stop offset="100%" stopColor="#6366f1" />
+            <linearGradient id="calendarGradientEmerald" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#10B981" />
+              <stop offset="100%" stopColor="#34D399" />
             </linearGradient>
           </defs>
 
@@ -72,7 +69,7 @@ export function Logo({ size = 'md', variant = 'auto', showText = true, href = '/
             width="52"
             height="52"
             rx="14"
-            fill="url(#logoGradient)"
+            fill="url(#logoGradientEmerald)"
           />
 
           {/* Calendar body */}
@@ -82,8 +79,8 @@ export function Logo({ size = 'md', variant = 'auto', showText = true, href = '/
             width="32"
             height="28"
             rx="4"
-            fill="white"
-            fillOpacity="0.95"
+            fill="#000000"
+            fillOpacity="0.9"
           />
 
           {/* Calendar header */}
@@ -93,32 +90,32 @@ export function Logo({ size = 'md', variant = 'auto', showText = true, href = '/
             width="32"
             height="10"
             rx="4"
-            fill="url(#calendarGradient)"
+            fill="url(#calendarGradientEmerald)"
           />
           <rect
             x="12"
             y="22"
             width="32"
             height="4"
-            fill="url(#calendarGradient)"
+            fill="url(#calendarGradientEmerald)"
           />
 
           {/* Calendar rings */}
-          <rect x="20" y="12" width="4" height="8" rx="2" fill="white" />
-          <rect x="32" y="12" width="4" height="8" rx="2" fill="white" />
+          <rect x="20" y="12" width="4" height="8" rx="2" fill="#000000" />
+          <rect x="32" y="12" width="4" height="8" rx="2" fill="#000000" />
 
           {/* Calendar dots/grid - representing booked slots */}
-          <circle cx="20" cy="32" r="2.5" fill="#9333ea" />
-          <circle cx="28" cy="32" r="2.5" fill="#9333ea" />
-          <circle cx="36" cy="32" r="2.5" fill="#d4d4d8" />
-          <circle cx="20" cy="39" r="2.5" fill="#d4d4d8" />
-          <circle cx="28" cy="39" r="2.5" fill="#9333ea" />
-          <circle cx="36" cy="39" r="2.5" fill="#9333ea" />
+          <circle cx="20" cy="32" r="2.5" fill="#10B981" />
+          <circle cx="28" cy="32" r="2.5" fill="#10B981" />
+          <circle cx="36" cy="32" r="2.5" fill="#404040" />
+          <circle cx="20" cy="39" r="2.5" fill="#404040" />
+          <circle cx="28" cy="39" r="2.5" fill="#10B981" />
+          <circle cx="36" cy="39" r="2.5" fill="#10B981" />
 
           {/* Checkmark overlay */}
           <path
             d="M38 28L42 32L48 20"
-            stroke="#22c55e"
+            stroke="#FAFAFA"
             strokeWidth="3"
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -129,11 +126,9 @@ export function Logo({ size = 'md', variant = 'auto', showText = true, href = '/
 
       {/* Logo Text */}
       {showText && (
-        <div className={`font-bold ${text} ${textColorClass}`}>
+        <div className={`font-bold ${text} text-[#FAFAFA]`}>
           <span>Book</span>
-          <span className="bg-gradient-to-r from-purple-500 to-indigo-500 bg-clip-text text-transparent">
-            -iT
-          </span>
+          <span className="text-accent-gradient">-iT</span>
         </div>
       )}
     </motion.div>
