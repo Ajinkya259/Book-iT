@@ -1,10 +1,70 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { motion, useInView, useMotionValue, useTransform, animate } from 'framer-motion';
 import { Navbar } from '@/components/ui/Navbar';
 import { Footer } from '@/components/ui/Footer';
+
+// Animation variants
+const fadeInUp = {
+  hidden: { opacity: 0, y: 30 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] }
+  },
+};
+
+const fadeIn = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { duration: 0.5 }
+  },
+};
+
+const staggerContainer = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1,
+      delayChildren: 0.1,
+    },
+  },
+};
+
+const scaleIn = {
+  hidden: { opacity: 0, scale: 0.9 },
+  visible: {
+    opacity: 1,
+    scale: 1,
+    transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] }
+  },
+};
+
+// Animated counter component
+function Counter({ value, suffix = '' }: { value: number; suffix?: string }) {
+  const ref = useRef(null);
+  const isInView = useInView(ref, { once: true });
+  const count = useMotionValue(0);
+  const rounded = useTransform(count, (latest) =>
+    value % 1 === 0 ? Math.floor(latest).toLocaleString() : latest.toFixed(1)
+  );
+  const [displayValue, setDisplayValue] = useState('0');
+
+  useEffect(() => {
+    if (isInView) {
+      const controls = animate(count, value, { duration: 2, ease: [0.22, 1, 0.36, 1] });
+      const unsubscribe = rounded.on('change', (latest) => setDisplayValue(String(latest)));
+      return () => { controls.stop(); unsubscribe(); };
+    }
+  }, [isInView, value, count, rounded]);
+
+  return <span ref={ref}>{displayValue}{suffix}</span>;
+}
 
 const categories = [
   { name: 'Hair Salons', icon: '💇', slug: 'hair-salons', count: '120+' },
@@ -57,10 +117,10 @@ const features = [
 ];
 
 const stats = [
-  { value: '1,000+', label: 'Service Providers' },
-  { value: '50,000+', label: 'Bookings Made' },
-  { value: '4.9', label: 'Average Rating' },
-  { value: '10+', label: 'Cities' },
+  { value: 1000, suffix: '+', label: 'Service Providers' },
+  { value: 50000, suffix: '+', label: 'Bookings Made' },
+  { value: 4.9, suffix: '', label: 'Average Rating' },
+  { value: 10, suffix: '+', label: 'Cities' },
 ];
 
 const steps = [
@@ -83,180 +143,305 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white overflow-x-hidden">
       <Navbar />
 
       {/* Hero Section */}
       <section className="pt-32 pb-20 px-4">
         <div className="max-w-6xl mx-auto">
-          <div className="text-center max-w-3xl mx-auto">
+          <motion.div
+            className="text-center max-w-3xl mx-auto"
+            variants={staggerContainer}
+            initial="hidden"
+            animate="visible"
+          >
             {/* Badge */}
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-50 text-blue-600 text-sm font-medium mb-6">
-              <span className="w-2 h-2 rounded-full bg-blue-600"></span>
-              The simplest way to book appointments
-            </div>
+            <motion.div variants={fadeInUp}>
+              <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-50 text-blue-600 text-sm font-medium mb-6">
+                <span className="w-2 h-2 rounded-full bg-blue-600 animate-pulse"></span>
+                The simplest way to book appointments
+              </span>
+            </motion.div>
 
             {/* Headline */}
-            <h1 className="text-5xl md:text-6xl font-bold text-gray-900 mb-6 leading-tight">
+            <motion.h1
+              variants={fadeInUp}
+              className="text-5xl md:text-6xl font-bold text-gray-900 mb-6 leading-tight"
+            >
               Book appointments
               <br />
               <span className="text-blue-600">effortlessly</span>
-            </h1>
+            </motion.h1>
 
             {/* Subheadline */}
-            <p className="text-xl text-gray-600 mb-10 max-w-2xl mx-auto">
+            <motion.p
+              variants={fadeInUp}
+              className="text-xl text-gray-600 mb-10 max-w-2xl mx-auto"
+            >
               Discover local services, check real-time availability, and book instantly.
               Your time matters.
-            </p>
+            </motion.p>
 
             {/* Search Bar */}
-            <form onSubmit={handleSearch} className="max-w-xl mx-auto mb-8">
-              <div className="flex items-center bg-white border-2 border-gray-200 rounded-xl overflow-hidden focus-within:border-blue-500 transition-colors shadow-sm">
-                <svg className="w-5 h-5 text-gray-400 ml-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-                <input
-                  type="text"
-                  placeholder="Search for services or businesses..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="flex-1 px-4 py-4 text-gray-900 placeholder-gray-400 focus:outline-none"
-                />
-                <button
-                  type="submit"
-                  className="m-2 px-6 py-2.5 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors"
-                >
-                  Search
-                </button>
+            <motion.form
+              variants={fadeInUp}
+              onSubmit={handleSearch}
+              className="max-w-xl mx-auto mb-8"
+            >
+              <div className="relative group">
+                <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 to-blue-400 rounded-xl opacity-0 group-hover:opacity-20 group-focus-within:opacity-30 blur transition-all duration-300" />
+                <div className="relative flex items-center bg-white border-2 border-gray-200 rounded-xl overflow-hidden focus-within:border-blue-500 transition-colors shadow-sm">
+                  <svg className="w-5 h-5 text-gray-400 ml-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                  <input
+                    type="text"
+                    placeholder="Search for services or businesses..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="flex-1 px-4 py-4 text-gray-900 placeholder-gray-400 focus:outline-none"
+                  />
+                  <motion.button
+                    type="submit"
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    className="m-2 px-6 py-2.5 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors"
+                  >
+                    Search
+                  </motion.button>
+                </div>
               </div>
-            </form>
+            </motion.form>
 
             {/* Trust indicators */}
-            <div className="flex flex-wrap items-center justify-center gap-6 text-sm text-gray-500">
-              {['Free to use', 'No signup required', 'Instant booking'].map((text) => (
-                <div key={text} className="flex items-center gap-2">
+            <motion.div
+              variants={fadeInUp}
+              className="flex flex-wrap items-center justify-center gap-6 text-sm text-gray-500"
+            >
+              {['Free to use', 'No signup required', 'Instant booking'].map((text, index) => (
+                <motion.div
+                  key={text}
+                  className="flex items-center gap-2"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.5 + index * 0.1 }}
+                >
                   <svg className="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                   </svg>
                   {text}
-                </div>
+                </motion.div>
               ))}
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
         </div>
+
+        {/* Scroll indicator */}
+        <motion.div
+          className="flex justify-center mt-16"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1, y: [0, 8, 0] }}
+          transition={{ opacity: { delay: 1 }, y: { duration: 2, repeat: Infinity } }}
+        >
+          <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+          </svg>
+        </motion.div>
       </section>
 
       {/* Categories Section */}
       <section className="py-20 px-4 bg-gray-50">
         <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-12">
+          <motion.div
+            className="text-center mb-12"
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: "-100px" }}
+            variants={fadeInUp}
+          >
             <h2 className="text-3xl font-bold text-gray-900 mb-4">
               Browse by Category
             </h2>
             <p className="text-gray-600 max-w-2xl mx-auto">
               Find the perfect service from our curated selection of local businesses
             </p>
-          </div>
+          </motion.div>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <motion.div
+            className="grid grid-cols-2 md:grid-cols-4 gap-4"
+            variants={staggerContainer}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: "-100px" }}
+          >
             {categories.map((category) => (
-              <Link
-                key={category.slug}
-                href={`/search?category=${category.slug}`}
-                className="group p-6 bg-white rounded-xl border border-gray-200 hover:border-blue-500 hover:shadow-lg transition-all"
-              >
-                <div className="text-3xl mb-3">{category.icon}</div>
-                <h3 className="font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
-                  {category.name}
-                </h3>
-                <p className="text-sm text-gray-500 mt-1">{category.count} providers</p>
-              </Link>
+              <motion.div key={category.slug} variants={fadeInUp}>
+                <Link href={`/search?category=${category.slug}`}>
+                  <motion.div
+                    className="group p-6 bg-white rounded-xl border border-gray-200 hover:border-blue-500 transition-all cursor-pointer"
+                    whileHover={{ y: -4, boxShadow: '0 12px 24px rgba(37, 99, 235, 0.15)' }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    <div className="text-3xl mb-3">{category.icon}</div>
+                    <h3 className="font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
+                      {category.name}
+                    </h3>
+                    <p className="text-sm text-gray-500 mt-1">{category.count} providers</p>
+                  </motion.div>
+                </Link>
+              </motion.div>
             ))}
-          </div>
+          </motion.div>
         </div>
       </section>
 
       {/* How it Works */}
       <section className="py-20 px-4">
         <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-12">
+          <motion.div
+            className="text-center mb-12"
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: "-100px" }}
+            variants={fadeInUp}
+          >
             <h2 className="text-3xl font-bold text-gray-900 mb-4">
               How it Works
             </h2>
             <p className="text-gray-600">
               Book your next appointment in three simple steps
             </p>
-          </div>
+          </motion.div>
 
-          <div className="grid md:grid-cols-3 gap-8">
+          <motion.div
+            className="grid md:grid-cols-3 gap-8"
+            variants={staggerContainer}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: "-100px" }}
+          >
             {steps.map((step, index) => (
-              <div key={step.number} className="relative text-center">
+              <motion.div
+                key={step.number}
+                className="relative text-center"
+                variants={scaleIn}
+              >
                 {/* Connector line */}
                 {index < steps.length - 1 && (
                   <div className="hidden md:block absolute top-8 left-[60%] w-[80%] h-0.5 bg-gray-200" />
                 )}
 
-                <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-blue-600 text-white text-2xl font-bold mb-4">
+                <motion.div
+                  className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-blue-600 text-white text-2xl font-bold mb-4"
+                  whileHover={{ scale: 1.1 }}
+                  transition={{ type: "spring", stiffness: 400, damping: 10 }}
+                >
                   {step.number}
-                </div>
+                </motion.div>
                 <h3 className="text-xl font-semibold text-gray-900 mb-2">{step.title}</h3>
                 <p className="text-gray-600">{step.description}</p>
-              </div>
+              </motion.div>
             ))}
-          </div>
+          </motion.div>
         </div>
       </section>
 
       {/* Features Section */}
       <section className="py-20 px-4 bg-gray-50">
         <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-12">
+          <motion.div
+            className="text-center mb-12"
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: "-100px" }}
+            variants={fadeInUp}
+          >
             <h2 className="text-3xl font-bold text-gray-900 mb-4">
               Why Choose Book-iT?
             </h2>
             <p className="text-gray-600 max-w-2xl mx-auto">
               We make booking appointments simple, fast, and reliable
             </p>
-          </div>
+          </motion.div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <motion.div
+            className="grid md:grid-cols-2 lg:grid-cols-4 gap-6"
+            variants={staggerContainer}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: "-100px" }}
+          >
             {features.map((feature) => (
-              <div
+              <motion.div
                 key={feature.title}
-                className="p-6 bg-white rounded-xl border border-gray-200 hover:shadow-lg transition-all"
+                variants={fadeInUp}
+                whileHover={{ y: -4 }}
+                className="p-6 bg-white rounded-xl border border-gray-200 hover:border-blue-300 hover:shadow-lg transition-all"
               >
-                <div className="w-12 h-12 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center mb-4">
+                <motion.div
+                  className="w-12 h-12 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center mb-4"
+                  whileHover={{ scale: 1.1, rotate: 5 }}
+                  transition={{ type: "spring", stiffness: 400, damping: 10 }}
+                >
                   {feature.icon}
-                </div>
+                </motion.div>
                 <h3 className="font-semibold text-gray-900 mb-2">{feature.title}</h3>
                 <p className="text-sm text-gray-600">{feature.description}</p>
-              </div>
+              </motion.div>
             ))}
-          </div>
+          </motion.div>
         </div>
       </section>
 
       {/* Stats Section */}
       <section className="py-20 px-4">
         <div className="max-w-6xl mx-auto">
-          <div className="bg-blue-600 rounded-2xl p-12">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+          <motion.div
+            className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-2xl p-12 relative overflow-hidden"
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: "-100px" }}
+            variants={scaleIn}
+          >
+            {/* Background decoration */}
+            <div className="absolute inset-0 overflow-hidden">
+              <div className="absolute -top-24 -right-24 w-64 h-64 bg-white/10 rounded-full blur-3xl" />
+              <div className="absolute -bottom-24 -left-24 w-64 h-64 bg-white/10 rounded-full blur-3xl" />
+            </div>
+
+            <motion.div
+              className="relative grid grid-cols-2 md:grid-cols-4 gap-8"
+              variants={staggerContainer}
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true }}
+            >
               {stats.map((stat) => (
-                <div key={stat.label} className="text-center">
+                <motion.div
+                  key={stat.label}
+                  className="text-center"
+                  variants={fadeInUp}
+                >
                   <div className="text-4xl md:text-5xl font-bold text-white mb-2">
-                    {stat.value}
+                    <Counter value={stat.value} suffix={stat.suffix} />
                   </div>
                   <div className="text-blue-100">{stat.label}</div>
-                </div>
+                </motion.div>
               ))}
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
         </div>
       </section>
 
       {/* CTA Section */}
       <section className="py-20 px-4 bg-gray-50">
-        <div className="max-w-4xl mx-auto text-center">
+        <motion.div
+          className="max-w-4xl mx-auto text-center"
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, margin: "-100px" }}
+          variants={fadeInUp}
+        >
           <h2 className="text-3xl font-bold text-gray-900 mb-4">
             Ready to get started?
           </h2>
@@ -264,67 +449,105 @@ export default function Home() {
             Whether you're looking to book or list your business, Book-iT has you covered.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link
-              href="/search"
-              className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 transition-colors"
-            >
-              Find Services
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-              </svg>
-            </Link>
-            <Link
-              href="/register/vendor"
-              className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-white border-2 border-gray-200 text-gray-900 font-semibold rounded-xl hover:border-blue-500 hover:text-blue-600 transition-colors"
-            >
-              List Your Business
-            </Link>
+            <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+              <Link
+                href="/search"
+                className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 transition-colors shadow-lg shadow-blue-500/25"
+              >
+                Find Services
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                </svg>
+              </Link>
+            </motion.div>
+            <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+              <Link
+                href="/register/vendor"
+                className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-white border-2 border-gray-200 text-gray-900 font-semibold rounded-xl hover:border-blue-500 hover:text-blue-600 transition-colors"
+              >
+                List Your Business
+              </Link>
+            </motion.div>
           </div>
-        </div>
+        </motion.div>
       </section>
 
       {/* For Vendors Section */}
       <section className="py-20 px-4">
         <div className="max-w-6xl mx-auto">
           <div className="grid md:grid-cols-2 gap-12 items-center">
-            <div>
-              <span className="inline-block px-3 py-1 text-sm font-medium bg-green-50 text-green-600 rounded-full mb-4">
+            <motion.div
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true, margin: "-100px" }}
+              variants={staggerContainer}
+            >
+              <motion.span
+                variants={fadeInUp}
+                className="inline-block px-3 py-1 text-sm font-medium bg-green-50 text-green-600 rounded-full mb-4"
+              >
                 For Businesses
-              </span>
-              <h2 className="text-3xl font-bold text-gray-900 mb-4">
+              </motion.span>
+              <motion.h2
+                variants={fadeInUp}
+                className="text-3xl font-bold text-gray-900 mb-4"
+              >
                 Grow your business with Book-iT
-              </h2>
-              <p className="text-gray-600 mb-6">
+              </motion.h2>
+              <motion.p
+                variants={fadeInUp}
+                className="text-gray-600 mb-6"
+              >
                 Join thousands of service providers who use Book-iT to manage their appointments,
                 reach new customers, and grow their business.
-              </p>
-              <ul className="space-y-3 mb-8">
+              </motion.p>
+              <motion.ul
+                variants={staggerContainer}
+                className="space-y-3 mb-8"
+              >
                 {[
                   'Free online booking page',
                   'Automated email reminders',
                   'Customer reviews & ratings',
                   'Analytics dashboard',
                 ].map((item) => (
-                  <li key={item} className="flex items-center gap-3 text-gray-700">
+                  <motion.li
+                    key={item}
+                    variants={fadeInUp}
+                    className="flex items-center gap-3 text-gray-700"
+                  >
                     <svg className="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                     </svg>
                     {item}
-                  </li>
+                  </motion.li>
                 ))}
-              </ul>
-              <Link
-                href="/register/vendor"
-                className="inline-flex items-center gap-2 px-6 py-3 bg-gray-900 text-white font-semibold rounded-lg hover:bg-gray-800 transition-colors"
+              </motion.ul>
+              <motion.div variants={fadeInUp} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                <Link
+                  href="/register/vendor"
+                  className="inline-flex items-center gap-2 px-6 py-3 bg-gray-900 text-white font-semibold rounded-lg hover:bg-gray-800 transition-colors"
+                >
+                  Get Started Free
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                  </svg>
+                </Link>
+              </motion.div>
+            </motion.div>
+
+            <motion.div
+              className="bg-gray-100 rounded-2xl p-8"
+              initial={{ opacity: 0, x: 50 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true, margin: "-100px" }}
+              transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+            >
+              <motion.div
+                className="bg-white rounded-xl shadow-lg p-6"
+                whileHover={{ y: -4 }}
+                transition={{ type: "spring", stiffness: 400, damping: 25 }}
               >
-                Get Started Free
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                </svg>
-              </Link>
-            </div>
-            <div className="bg-gray-100 rounded-2xl p-8">
-              <div className="bg-white rounded-xl shadow-lg p-6">
                 <div className="flex items-center gap-4 mb-6">
                   <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center text-2xl">
                     💈
@@ -337,21 +560,34 @@ export default function Home() {
                   </div>
                 </div>
                 <div className="space-y-3">
-                  <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                    <span className="text-gray-700">Haircut</span>
-                    <span className="font-medium text-gray-900">₹300</span>
-                  </div>
-                  <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                    <span className="text-gray-700">Beard Trim</span>
-                    <span className="font-medium text-gray-900">₹150</span>
-                  </div>
-                  <div className="flex justify-between items-center p-3 bg-blue-50 rounded-lg border-2 border-blue-200">
-                    <span className="text-blue-700 font-medium">Hair Color</span>
-                    <span className="font-medium text-blue-700">₹800</span>
-                  </div>
+                  {[
+                    { name: 'Haircut', price: '₹300' },
+                    { name: 'Beard Trim', price: '₹150' },
+                    { name: 'Hair Color', price: '₹800', featured: true },
+                  ].map((service, index) => (
+                    <motion.div
+                      key={service.name}
+                      initial={{ opacity: 0, x: -20 }}
+                      whileInView={{ opacity: 1, x: 0 }}
+                      viewport={{ once: true }}
+                      transition={{ delay: 0.2 + index * 0.1 }}
+                      className={`flex justify-between items-center p-3 rounded-lg ${
+                        service.featured
+                          ? 'bg-blue-50 border-2 border-blue-200'
+                          : 'bg-gray-50'
+                      }`}
+                    >
+                      <span className={service.featured ? 'text-blue-700 font-medium' : 'text-gray-700'}>
+                        {service.name}
+                      </span>
+                      <span className={service.featured ? 'font-medium text-blue-700' : 'font-medium text-gray-900'}>
+                        {service.price}
+                      </span>
+                    </motion.div>
+                  ))}
                 </div>
-              </div>
-            </div>
+              </motion.div>
+            </motion.div>
           </div>
         </div>
       </section>
